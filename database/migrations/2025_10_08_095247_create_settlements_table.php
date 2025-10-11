@@ -22,8 +22,8 @@ return new class extends Migration
             $t->string('note')->nullable();
             $t->timestamps();
 
-            $t->index(['from_user_id','to_user_id','paid_at']);
-            $t->check('from_user_id <> to_user_id'); // MySQL 8+; ako ne podržavaš, ukloni
+          
+           
         });
     }
 

@@ -18,7 +18,7 @@ class ExpenseFactory extends Factory
             'category_id' => Category::factory(),
             'paid_at' => $this->faker->dateTimeBetween('-60 days', 'now'),
             'amount' => $this->faker->randomFloat(2, 300, 15000),
-            'note' => $this->faker->optional()->sentence(6),
+            'description' => $this->faker->optional()->sentence(6),
         ];
     }
 }

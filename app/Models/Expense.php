@@ -10,7 +10,7 @@ class Expense extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['paid_by','category_id','paid_at','amount','note'];
+    protected $fillable = ['paid_by','category_id','paid_at','amount','note','description'];
     protected $casts = ['paid_at' => 'datetime', 'amount' => 'decimal:2'];
 
     public function payer(): BelongsTo
