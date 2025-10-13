@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CategoryController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -33,4 +34,16 @@ Route::middleware(['auth:sanctum','role:admin'])->group(function () {
 // primer: admin ili user
 Route::middleware(['auth:sanctum','role:admin,user'])->group(function () {
     
+});
+
+// Public read  
+Route::get('/categories', [CategoryController::class, 'index']);
+Route::get('/categories/{category}', [CategoryController::class, 'show']);
+
+// Za izmene — zaštiti Sanctum-om i ulogom (npr. admin)
+Route::middleware(['auth:sanctum','role:admin'])->group(function () {
+    Route::post('/categories', [CategoryController::class, 'store']);
+    Route::put('/categories/{category}', [CategoryController::class, 'update']);
+    Route::patch('/categories/{category}', [CategoryController::class, 'update']);
+    Route::delete('/categories/{category}', [CategoryController::class, 'destroy']);
 });
