@@ -25,3 +25,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout',     [AuthController::class, 'logout']);
     Route::post('/logout-all', [AuthController::class, 'logoutAll']);
 });
+// primer: samo admin
+Route::middleware(['auth:sanctum','role:admin'])->group(function () {
+     
+});
+
+// primer: admin ili user
+Route::middleware(['auth:sanctum','role:admin,user'])->group(function () {
+    
+});
