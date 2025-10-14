@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\SettlementController;
 use App\Http\Controllers\SplitController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -73,4 +74,16 @@ Route::middleware(['auth:sanctum','role:admin,user'])->group(function () {
     // dodatne akcije za status izmirenja
     Route::post('/splits/{split}/settle',   [SplitController::class, 'settle']);
     Route::post('/splits/{split}/unsettle', [SplitController::class, 'unsettle']);
+});
+
+// Public read (po želji)
+Route::get('/settlements', [SettlementController::class, 'index']);
+Route::get('/settlements/{settlement}', [SettlementController::class, 'show']);
+
+// Protected writes (Sanctum + role)
+Route::middleware(['auth:sanctum','role:admin,user'])->group(function () {
+    Route::post('/settlements', [SettlementController::class, 'store']);
+    Route::put('/settlements/{settlement}', [SettlementController::class, 'update']);
+    Route::patch('/settlements/{settlement}', [SettlementController::class, 'update']);
+    Route::delete('/settlements/{settlement}', [SettlementController::class, 'destroy']);
 });
