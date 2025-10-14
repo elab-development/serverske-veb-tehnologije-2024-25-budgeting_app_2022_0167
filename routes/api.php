@@ -1,89 +1,80 @@
 <?php
 
+use App\Http\Controllers\AdminStatsController;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
+
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ExpenseController;
-use App\Http\Controllers\SettlementController;
 use App\Http\Controllers\SplitController;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\SettlementController;
 
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| is assigned the "api" middleware group. Enjoy building your API!
-|
-*/
-
-// Public
+ 
+/* ------------------------ GUEST (no auth) ------------------------ */
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login',    [AuthController::class, 'login']);
 
-// Protected  
+Route::get('/categories',           [CategoryController::class, 'index']); // javno
+Route::get('/categories/{category}',[CategoryController::class, 'show']);  // javno
+
+/* ------------------------ AUTH (any role) ------------------------ */
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me',          [AuthController::class, 'me']);
     Route::post('/logout',     [AuthController::class, 'logout']);
     Route::post('/logout-all', [AuthController::class, 'logoutAll']);
 });
-// primer: samo admin
-Route::middleware(['auth:sanctum','role:admin'])->group(function () {
-     
-});
 
-// primer: admin ili user
-Route::middleware(['auth:sanctum','role:admin,user'])->group(function () {
-    
-});
+/* ------------------------ USER ONLY ------------------------------ */
+Route::middleware(['auth:sanctum','role:user'])->group(function () {
+    // Expenses – kreiranje/izmena/brisanje sopstvenih
+    Route::post('/expenses',                   [ExpenseController::class, 'store']);
+    Route::put('/expenses/{expense}',          [ExpenseController::class, 'update']);
+    Route::patch('/expenses/{expense}',        [ExpenseController::class, 'update']);
+    Route::delete('/expenses/{expense}',       [ExpenseController::class, 'destroy']);
 
-// Public read  
-Route::get('/categories', [CategoryController::class, 'index']);
-Route::get('/categories/{category}', [CategoryController::class, 'show']);
+    // Splits – kreiranje/izmena/brisanje + akcije settle/unsettle
+    Route::post('/splits',                     [SplitController::class, 'store']);
+    Route::put('/splits/{split}',              [SplitController::class, 'update']);
+    Route::patch('/splits/{split}',            [SplitController::class, 'update']);
+    Route::delete('/splits/{split}',           [SplitController::class, 'destroy']);
+    Route::post('/splits/{split}/settle',      [SplitController::class, 'settle']);
+    Route::post('/splits/{split}/unsettle',    [SplitController::class, 'unsettle']);
 
-// Za izmene — zaštiti Sanctum-om i ulogom (npr. admin)
-Route::middleware(['auth:sanctum','role:admin'])->group(function () {
-    Route::post('/categories', [CategoryController::class, 'store']);
-    Route::put('/categories/{category}', [CategoryController::class, 'update']);
-    Route::patch('/categories/{category}', [CategoryController::class, 'update']);
-    Route::delete('/categories/{category}', [CategoryController::class, 'destroy']);
-});
-
-Route::get('/expenses', [ExpenseController::class, 'index']);
-Route::get('/expenses/{expense}', [ExpenseController::class, 'show']);
-
-// Protected writes (Sanctum + role)
-Route::middleware(['auth:sanctum','role:admin,user'])->group(function () {
-    Route::post('/expenses', [ExpenseController::class, 'store']);
-    Route::put('/expenses/{expense}', [ExpenseController::class, 'update']);
-    Route::patch('/expenses/{expense}', [ExpenseController::class, 'update']);
-    Route::delete('/expenses/{expense}', [ExpenseController::class, 'destroy']);
-}); 
-Route::get('/splits', [SplitController::class, 'index']);
-Route::get('/splits/{split}', [SplitController::class, 'show']);
-
-// Protected writes (Sanctum + role):
-Route::middleware(['auth:sanctum','role:admin,user'])->group(function () {
-    Route::post('/splits', [SplitController::class, 'store']);
-    Route::put('/splits/{split}', [SplitController::class, 'update']);
-    Route::patch('/splits/{split}', [SplitController::class, 'update']);
-    Route::delete('/splits/{split}', [SplitController::class, 'destroy']);
-
-    // dodatne akcije za status izmirenja
-    Route::post('/splits/{split}/settle',   [SplitController::class, 'settle']);
-    Route::post('/splits/{split}/unsettle', [SplitController::class, 'unsettle']);
-});
-
-// Public read (po želji)
-Route::get('/settlements', [SettlementController::class, 'index']);
-Route::get('/settlements/{settlement}', [SettlementController::class, 'show']);
-
-// Protected writes (Sanctum + role)
-Route::middleware(['auth:sanctum','role:admin,user'])->group(function () {
-    Route::post('/settlements', [SettlementController::class, 'store']);
-    Route::put('/settlements/{settlement}', [SettlementController::class, 'update']);
-    Route::patch('/settlements/{settlement}', [SettlementController::class, 'update']);
+    // Settlements – kreiranje/izmena/brisanje sopstvenih
+    Route::post('/settlements',                [SettlementController::class, 'store']);
+    Route::put('/settlements/{settlement}',    [SettlementController::class, 'update']);
+    Route::patch('/settlements/{settlement}',  [SettlementController::class, 'update']);
     Route::delete('/settlements/{settlement}', [SettlementController::class, 'destroy']);
+});
+
+/* ------------------------ ADMIN ONLY ----------------------------- */
+Route::middleware(['auth:sanctum','role:admin'])->group(function () {
+    // Categories – CRUD (samo admin)
+    Route::post('/categories',                 [CategoryController::class, 'store']);
+    Route::put('/categories/{category}',       [CategoryController::class, 'update']);
+    Route::patch('/categories/{category}',     [CategoryController::class, 'update']);
+    Route::delete('/categories/{category}',    [CategoryController::class, 'destroy']);
+
+
+    Route::get('/admin/stats/overview',     [AdminStatsController::class, 'overview']);
+    Route::get('/admin/stats/debts-matrix', [AdminStatsController::class, 'debtsMatrix']);
+
+});
+
+
+/* --------- ADMIN or USER (čitanje listi i detalja) --------------- */
+ 
+Route::middleware(['auth:sanctum','role:admin,user'])->group(function () {
+    // Expenses – read
+    Route::get('/expenses',           [ExpenseController::class, 'index']);
+    Route::get('/expenses/{expense}', [ExpenseController::class, 'show']);
+
+    // Splits – read
+    Route::get('/splits',             [SplitController::class, 'index']);
+    Route::get('/splits/{split}',     [SplitController::class, 'show']);
+
+    // Settlements – read
+    Route::get('/settlements',                [SettlementController::class, 'index']);
+    Route::get('/settlements/{settlement}',   [SettlementController::class, 'show']);
 });
