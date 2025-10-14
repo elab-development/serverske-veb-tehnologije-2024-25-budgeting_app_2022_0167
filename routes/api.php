@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\SplitController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -58,4 +59,18 @@ Route::middleware(['auth:sanctum','role:admin,user'])->group(function () {
     Route::put('/expenses/{expense}', [ExpenseController::class, 'update']);
     Route::patch('/expenses/{expense}', [ExpenseController::class, 'update']);
     Route::delete('/expenses/{expense}', [ExpenseController::class, 'destroy']);
+}); 
+Route::get('/splits', [SplitController::class, 'index']);
+Route::get('/splits/{split}', [SplitController::class, 'show']);
+
+// Protected writes (Sanctum + role):
+Route::middleware(['auth:sanctum','role:admin,user'])->group(function () {
+    Route::post('/splits', [SplitController::class, 'store']);
+    Route::put('/splits/{split}', [SplitController::class, 'update']);
+    Route::patch('/splits/{split}', [SplitController::class, 'update']);
+    Route::delete('/splits/{split}', [SplitController::class, 'destroy']);
+
+    // dodatne akcije za status izmirenja
+    Route::post('/splits/{split}/settle',   [SplitController::class, 'settle']);
+    Route::post('/splits/{split}/unsettle', [SplitController::class, 'unsettle']);
 });
