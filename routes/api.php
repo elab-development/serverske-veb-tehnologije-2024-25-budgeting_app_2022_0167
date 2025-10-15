@@ -1,40 +1,64 @@
 <?php
 
-use App\Http\Controllers\AdminStatsController;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Http\Request;
-
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\SplitController;
-use App\Http\Controllers\SettlementController; 
+use App\Http\Controllers\SettlementController;
+use App\Http\Controllers\AdminStatsController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\UserExportController;
+use App\Http\Controllers\RatesController;
 
-/* ------------------------ GUEST (no auth) ------------------------ */
+/*
+|--------------------------------------------------------------------------
+| PUBLIC (bez autentikacije)
+|--------------------------------------------------------------------------
+*/
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login',    [AuthController::class, 'login']);
 
-Route::get('/categories',           [CategoryController::class, 'index']); // javno
-Route::get('/categories/{category}',[CategoryController::class, 'show']);  // javno
+/* Resource primer (read-only, javno) */
+Route::apiResource('categories', CategoryController::class)->only(['index','show']);
 
-/* ------------------------ AUTH (any role) ------------------------ */
+/* Reset lozinke (public, throttled) */
+Route::post('/password/forgot', [PasswordResetController::class, 'sendResetLink'])
+    ->middleware('throttle:6,1');
+Route::post('/password/reset',  [PasswordResetController::class, 'reset']);
+
+/* Javni kursni list (proxy ka spoljnjem servisu) */
+Route::get('/rates', [RatesController::class, 'latest']); // ?from=EUR&to=USD,RSD
+
+/*
+|--------------------------------------------------------------------------
+| AUTH (bilo koja uloga)
+|--------------------------------------------------------------------------
+*/
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me',          [AuthController::class, 'me']);
     Route::post('/logout',     [AuthController::class, 'logout']);
     Route::post('/logout-all', [AuthController::class, 'logoutAll']);
+
+    /* Export transakcija – dozvoljeno vlasniku ili adminu (provera u kontroleru) */
+    Route::get('/users/{user}/export/transactions.csv',
+        [UserExportController::class, 'exportUserTransactions']
+    )->name('users.export.transactions');
 });
 
-/* ------------------------ USER ONLY ------------------------------ */
+/*
+|--------------------------------------------------------------------------
+| USER (krajnji korisnik)
+|--------------------------------------------------------------------------
+*/
 Route::middleware(['auth:sanctum','role:user'])->group(function () {
-    // Expenses – kreiranje/izmena/brisanje sopstvenih
-    Route::post('/expenses',                   [ExpenseController::class, 'store']);
-    Route::put('/expenses/{expense}',          [ExpenseController::class, 'update']);
-    Route::patch('/expenses/{expense}',        [ExpenseController::class, 'update']);
-    Route::delete('/expenses/{expense}',       [ExpenseController::class, 'destroy']);
+    // Expenses – create/update/delete svojih
+    Route::post('/expenses',             [ExpenseController::class, 'store']);
+    Route::put('/expenses/{expense}',    [ExpenseController::class, 'update']);
+    Route::patch('/expenses/{expense}',  [ExpenseController::class, 'update']);
+    Route::delete('/expenses/{expense}', [ExpenseController::class, 'destroy']);
 
-    // Splits – kreiranje/izmena/brisanje + akcije settle/unsettle
+    // Splits – create/update/delete + settle/unsettle
     Route::post('/splits',                     [SplitController::class, 'store']);
     Route::put('/splits/{split}',              [SplitController::class, 'update']);
     Route::patch('/splits/{split}',            [SplitController::class, 'update']);
@@ -42,30 +66,35 @@ Route::middleware(['auth:sanctum','role:user'])->group(function () {
     Route::post('/splits/{split}/settle',      [SplitController::class, 'settle']);
     Route::post('/splits/{split}/unsettle',    [SplitController::class, 'unsettle']);
 
-    // Settlements – kreiranje/izmena/brisanje sopstvenih
+    // Settlements – create/update/delete svojih
     Route::post('/settlements',                [SettlementController::class, 'store']);
     Route::put('/settlements/{settlement}',    [SettlementController::class, 'update']);
     Route::patch('/settlements/{settlement}',  [SettlementController::class, 'update']);
     Route::delete('/settlements/{settlement}', [SettlementController::class, 'destroy']);
 });
 
-/* ------------------------ ADMIN ONLY ----------------------------- */
+/*
+|--------------------------------------------------------------------------
+| ADMIN
+|--------------------------------------------------------------------------
+*/
 Route::middleware(['auth:sanctum','role:admin'])->group(function () {
-    // Categories – CRUD (samo admin)
+    // Categories – CRUD (admin-only)
     Route::post('/categories',                 [CategoryController::class, 'store']);
     Route::put('/categories/{category}',       [CategoryController::class, 'update']);
     Route::patch('/categories/{category}',     [CategoryController::class, 'update']);
     Route::delete('/categories/{category}',    [CategoryController::class, 'destroy']);
 
-
-    Route::get('/admin/stats/overview',     [AdminStatsController::class, 'overview']);
-    Route::get('/admin/stats/debts-matrix', [AdminStatsController::class, 'debtsMatrix']);
-
+    // Admin statistika
+    Route::get('/admin/stats/overview',        [AdminStatsController::class, 'overview']);
+    Route::get('/admin/stats/debts-matrix',    [AdminStatsController::class, 'debtsMatrix']);
 });
 
-
-/* --------- ADMIN or USER (čitanje listi i detalja) --------------- */
- 
+/*
+|--------------------------------------------------------------------------
+| READ (oba tipa: admin ili user) – liste i detalji
+|--------------------------------------------------------------------------
+*/
 Route::middleware(['auth:sanctum','role:admin,user'])->group(function () {
     // Expenses – read
     Route::get('/expenses',           [ExpenseController::class, 'index']);
@@ -78,15 +107,4 @@ Route::middleware(['auth:sanctum','role:admin,user'])->group(function () {
     // Settlements – read
     Route::get('/settlements',                [SettlementController::class, 'index']);
     Route::get('/settlements/{settlement}',   [SettlementController::class, 'show']);
-});
-
-
-Route::post('/password/forgot', [PasswordResetController::class, 'sendResetLink'])
-    ->middleware('throttle:6,1'); // zaštita od spam-a
-
-Route::post('/password/reset', [PasswordResetController::class, 'reset']);
-Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/users/{user}/export/transactions.csv',
-        [UserExportController::class, 'exportUserTransactions']
-    )->name('users.export.transactions');
 });
