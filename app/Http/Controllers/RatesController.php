@@ -13,16 +13,40 @@ class RatesController extends Controller
         $to   = strtoupper($req->query('to',   'USD,RSD'));
 
         $cacheKey = "fx:$from:$to";
-        $data = Cache::remember($cacheKey, now()->addMinutes(60), function () use ($from, $to) {
-            $res = Http::timeout(8)->get('https://api.frankfurter.dev/latest', [
-                'from' => $from,
-                'to'   => $to,
+        $ttl      = now()->addMinutes(60);
+
+        $data = Cache::remember($cacheKey, $ttl, function () use ($from, $to) {
+            // 1) Frankfurter (ECB) — ispravan domen .app
+            try {
+                $res = Http::timeout(8)->get('https://api.frankfurter.app/latest', [
+                    'from' => $from,
+                    'to'   => $to,
+                ]);
+
+                if ($res->ok()) {
+                    $j = $res->json();
+                    return [
+                        'provider' => 'frankfurter',
+                        'date'  => $j['date'] ?? null,
+                        'base'  => $j['base'] ?? $from,
+                        'rates' => $j['rates'] ?? [],
+                    ];
+                }
+            } catch (\Throwable $e) {
+                // ignore, probamo fallback
+            }
+
+            // 2) Fallback: exchangerate.host (free, no key)
+            $res2 = Http::timeout(8)->get('https://api.exchangerate.host/latest', [
+                'base'     => $from,
+                'symbols'  => $to,
             ])->throw()->json();
 
             return [
-                'date'  => $res['date'] ?? null,
-                'base'  => $res['base'] ?? $from,
-                'rates' => $res['rates'] ?? [],
+                'provider' => 'exchangerate.host',
+                'date'  => $res2['date'] ?? null,
+                'base'  => $res2['base'] ?? $from,
+                'rates' => $res2['rates'] ?? [],
             ];
         });
 

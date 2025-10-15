@@ -37,8 +37,7 @@ Route::get('/rates', [RatesController::class, 'latest']); // ?from=EUR&to=USD,RS
 */
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me',          [AuthController::class, 'me']);
-    Route::post('/logout',     [AuthController::class, 'logout']);
-    Route::post('/logout-all', [AuthController::class, 'logoutAll']);
+    Route::post('/logout',     [AuthController::class, 'logout']); 
 
     /* Export transakcija – dozvoljeno vlasniku ili adminu (provera u kontroleru) */
     Route::get('/users/{user}/export/transactions.csv',

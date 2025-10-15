@@ -75,11 +75,5 @@ class AuthController extends Controller
         $req->user()->currentAccessToken()->delete();
         return response()->json(['message' => 'Logged out']);
     }
-
-    // POST /api/logout-all  (svi tokeni korisnika)
-    public function logoutAll(Request $req)
-    {
-        $req->user()->tokens()->delete();
-        return response()->json(['message' => 'Logged out from all devices']);
-    }
+ 
 }

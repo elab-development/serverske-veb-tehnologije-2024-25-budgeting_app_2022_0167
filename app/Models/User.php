@@ -16,6 +16,10 @@ class User extends Authenticatable  implements CanResetPasswordContract
     protected $hidden = ['password','remember_token'];
     protected $casts = ['email_verified_at' => 'datetime'];
 
+
+    public const ROLE_USER  = 'user';
+    public const ROLE_ADMIN = 'admin';
+
     // troškovi koje je korisnik platio
     public function expensesPaid(): HasMany
     {
@@ -36,5 +40,14 @@ class User extends Authenticatable  implements CanResetPasswordContract
     public function settlementsReceived(): HasMany
     {
         return $this->hasMany(Settlement::class, 'to_user_id');
+    }
+      public function isAdmin(): bool
+    {
+        return $this->role === self::ROLE_ADMIN;
+    }
+
+    public function isUser(): bool
+    {
+        return $this->role === self::ROLE_USER;
     }
 }

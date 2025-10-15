@@ -11,7 +11,7 @@ class ExpenseController extends Controller
     // GET /api/expenses
     public function index(Request $request)
     {
-        // ?include=payer,category,splits  (splits automatski učita i splits.user)
+        // ?include=payer,category,splits   
         $include = collect(explode(',', (string) $request->query('include', '')))
             ->map(fn($s) => trim($s))
             ->filter()
@@ -47,21 +47,7 @@ class ExpenseController extends Controller
         );
     }
 
-    // GET /api/expenses/{expense}
-    public function show(Request $request, Expense $expense)
-    {
-        $include = collect(explode(',', (string) $request->query('include', '')))
-            ->map(fn($s) => trim($s))->filter()->values();
-
-        $with = [];
-        if ($include->contains('payer'))    $with[] = 'payer';
-        if ($include->contains('category')) $with[] = 'category';
-        if ($include->contains('splits'))   $with[] = 'splits.user';
-
-        if ($with) $expense->load($with);
-
-        return new ExpenseResource($expense);
-    }
+ 
 
     // POST /api/expenses
     public function store(Request $request)
@@ -72,7 +58,7 @@ class ExpenseController extends Controller
             'paid_at'     => ['required','date','before_or_equal:now'],
             'amount'      => ['required','numeric','min:0.01'],
             'description' => ['nullable','string','max:500'],
-            'note'        => ['nullable','string','max:500'],
+            
         ]);
 
         $expense = Expense::create($data);
@@ -93,7 +79,7 @@ class ExpenseController extends Controller
             'paid_at'     => ['sometimes','date','before_or_equal:now'],
             'amount'      => ['sometimes','numeric','min:0.01'],
             'description' => ['sometimes','nullable','string','max:500'],
-            'note'        => ['sometimes','nullable','string','max:500'],
+            
         ]);
 
         $expense->update($data);
