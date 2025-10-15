@@ -8,8 +8,8 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\SplitController;
-use App\Http\Controllers\SettlementController;
-
+use App\Http\Controllers\SettlementController; 
+use App\Http\Controllers\PasswordResetController;
  
 /* ------------------------ GUEST (no auth) ------------------------ */
 Route::post('/register', [AuthController::class, 'register']);
@@ -78,3 +78,9 @@ Route::middleware(['auth:sanctum','role:admin,user'])->group(function () {
     Route::get('/settlements',                [SettlementController::class, 'index']);
     Route::get('/settlements/{settlement}',   [SettlementController::class, 'show']);
 });
+
+
+Route::post('/password/forgot', [PasswordResetController::class, 'sendResetLink'])
+    ->middleware('throttle:6,1'); // zaštita od spam-a
+
+Route::post('/password/reset', [PasswordResetController::class, 'reset']);

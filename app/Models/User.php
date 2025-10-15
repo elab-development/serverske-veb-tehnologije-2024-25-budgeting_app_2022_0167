@@ -6,10 +6,11 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Laravel\Sanctum\HasApiTokens;
-
-class User extends Authenticatable
+use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
+use Illuminate\Auth\Passwords\CanResetPassword as CanResetPasswordTrait;
+class User extends Authenticatable  implements CanResetPasswordContract
 {
-     use HasApiTokens, HasFactory, Notifiable;
+     use HasApiTokens, HasFactory, Notifiable,CanResetPasswordTrait;
 
     protected $fillable = ['name','email','password','role'];
     protected $hidden = ['password','remember_token'];
