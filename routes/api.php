@@ -10,7 +10,8 @@ use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\SplitController;
 use App\Http\Controllers\SettlementController; 
 use App\Http\Controllers\PasswordResetController;
- 
+use App\Http\Controllers\UserExportController;
+
 /* ------------------------ GUEST (no auth) ------------------------ */
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login',    [AuthController::class, 'login']);
@@ -84,3 +85,8 @@ Route::post('/password/forgot', [PasswordResetController::class, 'sendResetLink'
     ->middleware('throttle:6,1'); // zaštita od spam-a
 
 Route::post('/password/reset', [PasswordResetController::class, 'reset']);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/users/{user}/export/transactions.csv',
+        [UserExportController::class, 'exportUserTransactions']
+    )->name('users.export.transactions');
+});
