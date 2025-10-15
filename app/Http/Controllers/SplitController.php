@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Split;
 use Illuminate\Http\Request;
 use App\Http\Resources\SplitResource;
+use App\Mail\SplitAssignedMail;
+use App\Mail\SplitSettledMail;
+use Illuminate\Support\Facades\Mail;
 
 class SplitController extends Controller
 {
@@ -49,9 +52,14 @@ class SplitController extends Controller
             'amount'     => ['required','numeric','min:0.01'],
             'settled_at' => ['nullable','date'],
         ]);
+ 
 
         $split = Split::create($data);
-        $split->load(['user','expense']);
+        $split->load(['user','expense.payer','expense.category']);
+
+        //   mejl učesniku kome je dodeljeno učešće
+        Mail::to($split->user->email)->send(new SplitAssignedMail($split));
+
 
         return (new SplitResource($split))
             ->response()
@@ -83,6 +91,11 @@ class SplitController extends Controller
 
         $split->settled_at = $data['settled_at'] ?? now();
         $split->save();
+
+        $split->load(['user','expense.payer']);
+        //   obavesti i platioca i učesnika
+        Mail::to($split->user->email)->send(new SplitSettledMail($split, true));
+        Mail::to($split->expense->payer->email)->send(new SplitSettledMail($split, true));
 
         return new SplitResource($split->fresh(['user','expense']));
     }
